@@ -1,0 +1,8 @@
+/.*/
+/venv/
+/*.pkl
+/build
+/*.o
+/*.so
+/dist
+/c_sha256.egg-info/
