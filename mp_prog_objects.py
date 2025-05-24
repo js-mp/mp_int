@@ -11,14 +11,14 @@ class Prog:
         if runners:
             s = self.__class__.__name__
             if s not in runners:
-                raise CompilerError(f'для класса {s} нет соответствующего раннера')
+                raise CompilerError(f'there is no corresponding runner for class {s}')
             self.runner = runners[s](self)
         else:
             self.runner = None
 
     def run(self, func_name: str, params=None):
         if self.runner is None:
-            raise CompilerError('раннеры не определены')
+            raise CompilerError('runners not defined')
         return self.runner.run(func_name, params)
 
 
@@ -29,7 +29,7 @@ class ProgObject:
         if runners:
             s = self.__class__.__name__
             if s not in runners:
-                raise CompilerError(f'для класса {s} нет соответствующего раннера')
+                raise CompilerError(f'there is no corresponding runner for class {s}')
             self.runner = runners[s](self)
         else:
             self.runner = Runner(self)
@@ -47,7 +47,7 @@ class Runner:
         self.po = po
 
     def run(self, rs):  # rs - run state
-        raise CompilerError('метод run не реализован')
+        raise CompilerError('run method is not implemented')
 
     def __str__(self):
         return f'{self.__class__.__name__}: {self.po}'
@@ -66,7 +66,7 @@ class ProgFunc(ProgObject):
         self.native = False
         self.block = ProgBlock(self.w_first, runners)
         self.vars: Dict[str:ProgVar] = {}
-        self.called_func_names = []  # список имён вызываемых функций
+        self.called_func_names = []
 
     def __str__(self):
         w = self.w_first
@@ -89,8 +89,8 @@ class ProgBlock(ProgObject):
     def __init__(self, w_first: Word, runners):
         super().__init__(w_first, runners)
         self.stack_len_in = self.stack_len_out = 0
-        self.code = []  # список выполнимых инструкций
-        self.first_point = None  # первая точка в блоке; точек не должно быть в блоке цикла, если меняется глубина
+        self.code = []  # list of executable instructions
+        self.first_point = None  # first point in block; no points should be in loop block with depth change
 
 
 # =====================================================================================================================
@@ -115,16 +115,16 @@ class ProgLoop(ProgObject):
 class ProgReduce(ProgObject):
     def __init__(self, w_first: Word, nn, runners):
         super().__init__(w_first, runners)
-        self.nn = nn  # число бит, на которое уменьшается глубина стека
+        self.nn = nn  # the number of bits by which the stack depth is reduced
 
 
 # =====================================================================================================================
 class ProgAssign(ProgObject):
     def __init__(self, w_first: Word, runners):
         super().__init__(w_first, runners)
-        self.var = None  # ProgVar или int
+        self.var = None  # ProgVar or int
         self.is_num = False
-        self.nn = 0  # число бит (размер переменной)
+        self.nn = 0  # number of bits (variable size)
         self.var_from_stack = False
         self.var_to_stack = False
 

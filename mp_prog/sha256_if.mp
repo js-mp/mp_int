@@ -1,6 +1,6 @@
 #include libs_if.mp
 
-func ki:0:2048 #0h:2048h { // таблица констант k[i], прямой порядок (извлекать сдвигом влево)
+func ki:0:2048 #0h:2048h { // table of constants k[i], direct order (extract by shift left)
   428A2F98#h:32> 71374491#h:32> B5C0FBCF#h:32> E9B5DBA5#h:32> 3956C25B#h:32> 59F111F1#h:32> 923F82A4#h:32> AB1C5ED5#h:32>
   D807AA98#h:32> 12835B01#h:32> 243185BE#h:32> 550C7DC3#h:32> 72BE5D74#h:32> 80DEB1FE#h:32> 9BDC06A7#h:32> C19BF174#h:32>
   E49B69C1#h:32> EFBE4786#h:32> 0FC19DC6#h:32> 240CA1CC#h:32> 2DE92C6F#h:32> 4A7484AA#h:32> 5CB0A9DC#h:32> 76F988DA#h:32>
@@ -65,7 +65,7 @@ func add_msg:512:2048 {
   }
 }
 
-func sha_block:768:256 #512h+256h:256h { // вход: 512 блок, 256 хеш (h[i]); выход: хеш
+func sha_block:768:256 #512h+256h:256h { // input: 512-bit block, 256-bit hash (h[i]); output: hash
   def { a:32 b:32 c:32 d:32 e:32 f:32 g:32 h:32 }
   def { S0:32 Ma:32 t2:32 S1:32 Ch:32 t1:32 }
   def { kk:2048 ww:2048 hh:256 hh1:256 }

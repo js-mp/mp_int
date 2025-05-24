@@ -5,7 +5,7 @@ from mp_prog_objects import *
 # =====================================================================================================================
 class IpRunError(Exception):
     def __init__(self, err):
-        self.err = err if err != '' else 'ошибка'
+        self.err = err if err != '' else 'error'
 
     def __str__(self):
         return self.err
@@ -35,7 +35,7 @@ class IpRunState:
 class IpRunFunc(Runner):
     def run(self, rs: IpRunState):
         if not isinstance(self.po, ProgFunc):
-            raise IpRunError('непредвиденная ошибка: несоответствие типов')
+            raise IpRunError('unexpected error: type mismatch')
         if self.po.native:
             self._run_native(rs, self.po)
         else:
@@ -56,7 +56,7 @@ class IpRunFunc(Runner):
             v1 = rs.stack.pop()
             rs.stack.append((v1 ^ 1) | v2)
         else:
-            raise IpRunError(f'нет такой native функции: {f.descr}')
+            raise IpRunError(f'there is no such native function: {f.descr}')
 
     @staticmethod
     def _run_code(rs: IpRunState, f: ProgFunc):
@@ -68,14 +68,14 @@ class IpRunFunc(Runner):
 # =====================================================================================================================
 class IpRunVoid(Runner):
     def run(self, rs: IpRunState):
-        raise IpRunError('непредвиденная ошибка: неисполняемая инструкция')
+        raise IpRunError('unexpected error: non-executable instruction')
 
 
 # =====================================================================================================================
 class IpRunBlock(Runner):
     def run(self, rs: IpRunState):
         if not isinstance(self.po, ProgBlock):
-            raise IpRunError('непредвиденная ошибка: несоответствие типов')
+            raise IpRunError('unexpected error: type mismatch')
         for x in self.po.code:
             x.runner.run(rs)
 
@@ -84,7 +84,7 @@ class IpRunBlock(Runner):
 class IpRunIf(Runner):
     def run(self, rs: IpRunState):
         if not isinstance(self.po, ProgIf):
-            raise IpRunError('непредвиденная ошибка: несоответствие типов')
+            raise IpRunError('unexpected error: type mismatch')
         if rs.stack.pop():
             self.po.block.runner.run(rs)
         elif self.po.block_else is not None:
@@ -95,7 +95,7 @@ class IpRunIf(Runner):
 class IpRunLoop(Runner):
     def run(self, rs: IpRunState):
         if not isinstance(self.po, ProgLoop):
-            raise IpRunError('непредвиденная ошибка: несоответствие типов')
+            raise IpRunError('unexpected error: type mismatch')
         for _ in range(self.po.nn):
             self.po.block.runner.run(rs)
 
@@ -104,7 +104,7 @@ class IpRunLoop(Runner):
 class IpRunReduce(Runner):
     def run(self, rs: IpRunState):
         if not isinstance(self.po, ProgReduce):
-            raise IpRunError('непредвиденная ошибка: несоответствие типов')
+            raise IpRunError('unexpected error: type mismatch')
         n = len(rs.stack) - self.po.nn
         del rs.stack[n:]
 
@@ -113,13 +113,13 @@ class IpRunReduce(Runner):
 class IpRunAssign(Runner):
     def run(self, rs: IpRunState):
         if not isinstance(self.po, ProgAssign):
-            raise IpRunError('непредвиденная ошибка: несоответствие типов')
+            raise IpRunError('unexpected error: type mismatch')
         v = self.po
         if v.is_num:
             rs.stack.extend(IpRunProg.bits_int_to_list(v.var, v.nn))
         else:
             if v.var.name not in rs.vars:
-                raise IpRunError(f'непредвиденная ошибка: отсутствует переменная {v.var.name} (в {rs.f.descr})')
+                raise IpRunError(f'unexpected error: variable {v.var.name} missing (in {rs.f.descr})')
             vv = rs.vars[v.var.name]
             if v.var_from_stack:
                 n = len(rs.stack) - v.nn
@@ -135,7 +135,7 @@ class IpRunAssign(Runner):
 class IpRunCall(Runner):
     def run(self, rs: IpRunState):
         if not isinstance(self.po, ProgCall):
-            raise IpRunError('непредвиденная ошибка: несоответствие типов')
+            raise IpRunError('unexpected error: type mismatch')
         rs.vars_push(self.po.f)
         self.po.f.runner.run(rs)
         rs.vars_pop()
@@ -163,10 +163,10 @@ class IpRunProg:
 
     @staticmethod
     def bits_int_to_list(n, p_len):
-        """ Преобразование числа в список нулей и единиц """
+        """ Convert a number to a list of zeros and ones """
         bb = bin(n)[2:]
         if len(bb) > p_len:
-            raise IpRunError(f'длина фактического параметра {len(bb)} бит больше максимальной {p_len}')
+            raise IpRunError(f'the actual parameter length {len(bb)} bits is greater than the maximum {p_len}')
         ret = [0] * p_len
         indent = p_len - len(bb)
         for i, c in enumerate(bb):
@@ -176,22 +176,22 @@ class IpRunProg:
 
     @staticmethod
     def _bits_binstr_to_list(s, p_len):
-        """ Преобразование бин строки в список нулей и единиц """
+        """ Convert bin string to list of zeros and ones """
         return IpRunProg.bits_int_to_list(int(s.hex(), 16), p_len)
 
     @staticmethod
     def bits_list(v, p_len):
-        """ Преобразование числа или бин строки в список нулей и единиц """
+        """ Convert a number or bin string to a list of zeros and ones """
         if type(v) is int:
             return IpRunProg.bits_int_to_list(v, p_len)
         elif type(v) is bytes:
             return IpRunProg._bits_binstr_to_list(v, p_len)
         else:
-            raise IpRunError(f'допустимые типы: int, bytes; получен: {type(v).__name__}')
+            raise IpRunError(f'valid types: int, bytes; obtained: {type(v).__name__}')
 
     @staticmethod
     def _list_to_str(lst, fmt):
-        """ Преобразования значения из списка нулей и единиц в заданный формат (d, h, b) """
+        """ Convert a value from a list of zeros and ones to a specified format (d, h, b) """
         n = int(''.join([str(n) for n in lst]), 2)
         if fmt == 'd':
             return str(n)
@@ -209,8 +209,8 @@ class IpRunProg:
     @staticmethod
     def param_to_str(lst, fmt, delim=', '):
         """
-            Преобразования значений параметров в строку с заданными форматами (d, h, b)
-            пример формата: [(16, 'd'), (16, 'd')]
+            Converting parameter values ​​to a string with specified formats (d, h, b)
+            format example: [(16, 'd'), (16, 'd')]
         """
         idx = 0
         ret = []
@@ -223,10 +223,11 @@ class IpRunProg:
         """
             func_name: 'and:2:1'
             params: { 'param': ..., 'print_result': True }
-            param: входной параметр; варианты: число, бин строка, список чисел или бин строк (соотв. формату параметра)
+            param: input parameter; options: number, bin string, list of numbers or bin strings
+                   (according to the parameter format)
         """
         if params is None or 'param' not in params:
-            raise IpRunError("не определён параметр params['param']; пример: { 'param': [1, 2] }")
+            raise IpRunError("params['param'] parameter is not defined; example: { 'param': [1, 2] }")
         param = params['param']
         print_result = params.get('print_result', True)
 
@@ -235,13 +236,13 @@ class IpRunProg:
         elif func_name in self.prog.funcs:
             f: ProgFunc = self.prog.funcs[func_name]
         else:
-            raise IpRunError(f'функции {func_name} нет в этой программе')
+            raise IpRunError(f'function {func_name} is not defined in this program')
 
         pp = []
         if type(param) is list:
             fmt = [n for n, _ in f.fmt[0]]
             if len(param) != len(fmt):
-                raise IpRunError(f'получено {len(param)} параметров, должно быть {len(fmt)}')
+                raise IpRunError(f'received {len(param)} parameters, should be {len(fmt)}')
             for i, n in enumerate(fmt):
                 pp.extend(self.bits_list(param[i], n))
         else:

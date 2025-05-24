@@ -41,13 +41,13 @@ class Compiler:
             if comment_pos >= 0:
                 s = s[:comment_pos]
             if '#include' in s:
-                s = s.strip()[8:].lstrip()  # имя файла в операторе #include
+                s = s.strip()[8:].lstrip()  # file name in #include statement
                 if os.path.sep in s:
                     self._clear_state()
-                    raise CompilerError(f'{fname} {line_no}: имя файла не должно содержать разделитель: {s}')
+                    raise CompilerError(f'{fname} {line_no}: the file name must not contain a separator: {s}')
                 if s in self._fnames:
                     self._clear_state()
-                    raise CompilerError(f'{fname} {line_no}: рекурсивная ссылка на файл {s}')
+                    raise CompilerError(f'{fname} {line_no}: recursive file reference {s}')
                 ret.extend(self._read_lines(s))
             else:
                 for s1, s2 in [('.', ' . '), ('{', ' { '), ('}', ' } ')]:
@@ -59,7 +59,7 @@ class Compiler:
         return ret
 
     def get_words(self):
-        """ Список слов всей программы """
+        """ List of words of the entire program """
         if len(self.lines) == 0:
             self.read_prog()
         ret: List[Word] = []
@@ -75,7 +75,7 @@ class Compiler:
         self.read_prog()
         ww = self.get_words()
         if len(ww) == 0:
-            raise CompilerError('пустая программа')
+            raise CompilerError('empty program')
         self.prog = Prog(self.runners)
         cs = CompilerState(ww, self.prog, self.runners)
         idx = 0
@@ -88,7 +88,7 @@ class Compiler:
         return self.prog
 
     def _check_recursion(self, cs):
-        # на самом деле рекурсия м.б. только при вызове себя
+        # in fact, recursion can only occur when calling itself
         for f in self.prog.funcs.values():
             prev_len = 0
             nn = set(f.called_func_names)
@@ -101,7 +101,7 @@ class Compiler:
                 nn |= add
             if f.descr in nn:
                 idx = f.w_first.idx + 1
-                raise CompilerError(str(Warn(cs.ww[idx], 'рекурсивный вызов функции')))
+                raise CompilerError(str(Warn(cs.ww[idx], 'recursive function call')))
 
     @staticmethod
     def is_valid_name(s: str):
@@ -109,7 +109,7 @@ class Compiler:
 
     @staticmethod
     def compile_func(cs: CompilerState, f: ProgFunc):
-        # объявление ф-ии func
+        # declaration of function func
         idx = f.w_first.idx
         cs.vars = {}
         cs.stack_len = 0
@@ -117,26 +117,26 @@ class Compiler:
         cs.expect(idx, 'func')
         idx += 1
 
-        # объявление ф-ии f:32:16
+        # function f:32:16 declaration
         f.descr = cs.get_word(idx)
         ss = f.descr.split(':')
         if len(ss) != 3 or not ss[1].isdecimal() or not ss[2].isdecimal():
-            raise cs.err(idx, 'неверное объявление ф-ии (пример: f:32:16)')
+            raise cs.err(idx, 'invalid function declaration (example: f:32:16)')
         f.name = ss[0]
         f.len_in = int(ss[1])
         f.len_out = int(ss[2])
         cs.stack_len = f.len_in
         if not Compiler.is_valid_name(f.name):
-            raise cs.err(idx, f'недопустимое имя функции "{f.name}"')
+            raise cs.err(idx, f'Invalid function name "{f.name}"')
         elif f.len_out == 0:
-            raise cs.err(idx, 'число выходных бит не может быть нулевым')
+            raise cs.err(idx, 'the number of output bits cannot be zero')
         elif f.descr in cs.prog.native_funcs:
-            raise cs.err(idx, f'функция {f.descr} уже имеется среди native функций')
+            raise cs.err(idx, f'function {f.descr} already exists among native functions')
         elif f.descr in cs.prog.funcs:
-            raise cs.err(idx, f'функция {f.descr} уже имеется среди описанных функций')
+            raise cs.err(idx, f'function {f.descr} already exists among the described functions')
         idx += 1
 
-        # формат параметров #16d+16d:16d
+        # Parameter format #16d+16d:16d
         w = cs.get_w(idx)
         if w.word in ('{', 'native'):
             f.fmt_str = f'#{f.len_in}h:{f.len_out}h'
@@ -144,7 +144,7 @@ class Compiler:
         else:
             f.fmt_str = w.word
         if f.fmt_str[0] != '#':
-            raise cs.err(idx, 'ожидается формат параметров ("#16d+16d:16d")')
+            raise cs.err(idx, 'expected parameter format ("#16d+16d:16d")')
         ss = f.fmt_str[1:].split(':')
         valid = True
         if len(ss) != 2:
@@ -163,20 +163,20 @@ class Compiler:
                     n1 = f.fmt[0][-1][0]
                     n += n1
                     if n1 == 0 and f.len_in > 0:
-                        raise cs.err(idx, 'нулевая длина недопустима')
+                        raise cs.err(idx, 'zero length is not allowed')
                 if n != f.len_in:
-                    raise cs.err(idx, f'несовпадение длины вход параметра {f.len_in} и формата {n}')
+                    raise cs.err(idx, f'mismatch between length of input parameter {f.len_in} and format {n}')
                 n = 0
                 for s in s2:
                     f.fmt[1].append((int(s[:-1]), s[-1]))
                     n1 = f.fmt[1][-1][0]
                     n += n1
                     if n1 == 0:
-                        raise cs.err(idx, 'нулевая длина недопустима')
+                        raise cs.err(idx, 'zero length is not allowed')
                 if n != f.len_out:
-                    raise cs.err(idx, f'несовпадение длины вых параметра {f.len_out} и формата {n}')
+                    raise cs.err(idx, f'mismatch between length of output parameter {f.len_out} and format {n}')
         if not valid:
-            raise cs.err(idx, 'неверный формат параметров (пример: #16d+16d:16d)')
+            raise cs.err(idx, 'invalid parameter format (example: #16d+16d:16d)')
         idx += 1
 
         w = cs.get_w(idx)
@@ -188,15 +188,15 @@ class Compiler:
         elif w.word == '{':
             cs.prog.funcs[f.descr] = f
         else:
-            raise cs.err(idx, 'ожидается "native" или "{"')
+            raise cs.err(idx, 'expected "native" or "{"')
 
-        # парсинг блока ф-ии
+        # parsing a function block
         f.block.w_first = f.block.w_last = w
         idx = Compiler.compile_block(cs, f, f.block)
 
         f.w_last = cs.get_w(idx - 1)
         if cs.stack_len != f.len_out:
-            raise cs.err(idx - 1, f'требуемая глубина стека {cs.stack_len} отличается от фактической {f.len_out}')
+            raise cs.err(idx - 1, f'required stack depth {cs.stack_len} differs from actual {f.len_out}')
         f.called_func_names = list(set(f.called_func_names))
         f.called_func_names.sort()
 
@@ -208,11 +208,11 @@ class Compiler:
     def _check_used_vars(cs: CompilerState, f: ProgFunc):
         for v in f.vars.values():
             if not v.used:
-                cs.warn(v.w_first.idx, 'переменная не используется')
+                cs.warn(v.w_first.idx, 'variable is not used')
 
     @staticmethod
     def compile_def(cs: CompilerState, f: ProgFunc, idx: int):
-        """ Парсинг объявления переменных """
+        """ Parsing variable declarations """
         cs.expect(idx, 'def')
         idx += 1
         cs.expect(idx, '{')
@@ -221,12 +221,12 @@ class Compiler:
             w = cs.get_w(idx)
             ss = w.word.split(':')
             if len(ss) != 2 or not Compiler.is_valid_name(ss[0]) or not ss[1].isdecimal():
-                raise cs.err(idx, 'неверный формат описания переменной (пример: v:32)')
+                raise cs.err(idx, 'invalid variable description format (example: v:32)')
             v = ProgVar(w, cs.runners)
             if v.size == 0:
-                raise cs.err(idx, 'нулевой размер недопустим')
+                raise cs.err(idx, 'zero size is not allowed')
             elif v.name in f.vars:
-                raise cs.err(idx, 'переменная с таким именем уже объявлена в этой функции')
+                raise cs.err(idx, 'a variable with that name is already declared in this function')
             f.vars[v.name] = v
             cs.vars[v.name] = v
             idx += 1
@@ -254,7 +254,7 @@ class Compiler:
             idx = Compiler.compile_block(cs, f, x.block_else)
             x.w_last = cs.get_w(idx - 1)
             if x.stack_len_out != cs.stack_len:
-                raise cs.err(idx, f'глубина стека после if и else различается: {x.stack_len_out} != {cs.stack_len}')
+                raise cs.err(idx, f'stack depth after if and else is different: {x.stack_len_out} != {cs.stack_len}')
         return idx
 
     @staticmethod
@@ -265,10 +265,10 @@ class Compiler:
 
         w = cs.get_w(idx)
         if not w.word.isdecimal():
-            raise cs.err(idx, 'ожидается число повторений цикла')
+            raise cs.err(idx, 'expected number of cycle repetitions')
         x.nn = int(w.word)
         if x.nn < 2:
-            cs.warn(idx, f'число повторений цикла: {x.nn}')
+            cs.warn(idx, f'number of cycle repetitions: {x.nn}')
         idx += 1
 
         w = cs.get_w(idx)
@@ -282,7 +282,7 @@ class Compiler:
 
         if x.block.first_point is not None and x.block.stack_len_out != x.block.stack_len_in:
             n = x.block.stack_len_out - x.block.stack_len_in
-            raise cs.err(idx, f'контроль глубины (точка) в цикле с изменением глубины стека (на {n})')
+            raise cs.err(idx, f'depth control (dot) in loop with stack depth change (by {n})')
 
         return idx
 
@@ -292,11 +292,11 @@ class Compiler:
         w = cs.get_w(idx)
 
         if w.word[:3] != '>_:' or not w.word[3:].isdecimal():
-            raise cs.err(idx, 'неверная команда уменьшения глубины стека (пример: >_:16)')
+            raise cs.err(idx, 'invalid stack depth reduction command (example: >_:16)')
 
         x.nn = int(w.word[3:])
         if x.nn == 0:
-            cs.warn(idx, 'нулевое изменение глубины стека')
+            cs.warn(idx, 'zero stack depth change')
 
         cs.stack_len -= x.nn
         cs.check_stack_len(idx, 0)
@@ -318,10 +318,10 @@ class Compiler:
             s = s[:-1]
         ss = s.split(':')
         if len(ss) != 2 or ss[0] == '' or not ss[1].isdecimal():
-            raise cs.err(idx, 'неверная команда присвоения (примеры: >v:16 v:16> >v:16>)')
+            raise cs.err(idx, 'invalid assignment command (examples: >v:16 v:16> >v:16>)')
 
         x.nn = int(ss[1])
-        x.var = ss[0]  # имя переменной или константа
+        x.var = ss[0]  # variable name or constant
         x.is_num = x.var[0].isdecimal() or '#' in x.var
 
         if x.is_num:
@@ -332,30 +332,30 @@ class Compiler:
                 fmt = ss[1]
             fmt = 10 if fmt == 'd' else 16 if fmt == 'h' else 2 if fmt == 'b' else 0
             if fmt == 0:
-                raise cs.err(idx, 'недопустимое обозначение системы счисления (допустимы: d, h, b)')
+                raise cs.err(idx, 'invalid number system designation (valid: d, h, b)')
 
             try:
                 x.var = int(x.var, fmt)
             except ValueError:
-                raise cs.err(idx, 'неверное представление константы')
+                raise cs.err(idx, 'invalid representation of constant')
 
             if x.var_from_stack:
-                raise cs.err(idx, 'запись из стека в константу невозможна')
+                raise cs.err(idx, 'writing from the stack to a constant is impossible')
             elif not x.var_to_stack:
-                raise cs.err(idx, 'константа может быть только записана в стек')
+                raise cs.err(idx, 'constant can only be written to the stack')
             n = len(bin(x.var)) - 2
             if n > x.nn:
-                raise cs.err(idx, f'указанный размер ({x.nn}) не может быть меньше размера константы в битах ({n})')
+                raise cs.err(idx, f'the specified size ({x.nn}) cannot be less than the size of the constant in bits ({n})')
         else:
             if x.var not in cs.vars:
-                raise cs.err(idx, f'переменная "{x.var}" не определена')
+                raise cs.err(idx, f'variable "{x.var}" is not defined')
             x.var = cs.vars[x.var]
             x.var.used = True
 
         if not x.is_num and x.var.size != x.nn:
-            raise cs.err(idx, f'размер переменной {x.var.size} не совпадает с указанным размером {x.nn}')
+            raise cs.err(idx, f'the size of the variable {x.var.size} does not match the specified size {x.nn}')
         elif x.nn == 0:
-            raise cs.err(idx, 'размер переменной не может быть нулём')
+            raise cs.err(idx, 'variable size cannot be zero')
 
         if x.var_from_stack:
             cs.stack_len -= x.nn
@@ -372,7 +372,7 @@ class Compiler:
         w = cs.get_w(idx)
 
         if w.word[0] != '>' or w.word[-1] != '>':
-            raise cs.err(idx, 'неверная команда вызова функции (пример: >f:32:16>)')
+            raise cs.err(idx, 'Invalid function call command (example: >f:32:16>)')
         s = w.word[1:-1]
 
         if s in cs.prog.native_funcs:
@@ -381,7 +381,7 @@ class Compiler:
             x.f = cs.prog.funcs[s]
             f.called_func_names.append(s)
         if x.f is None:
-            raise cs.err(idx, f'функция "{s}" не определена')
+            raise cs.err(idx, f'function "{s}" is not defined')
 
         cs.stack_len += x.f.len_out - x.f.len_in
         cs.check_stack_len(idx, 0)
@@ -391,7 +391,7 @@ class Compiler:
 
     @staticmethod
     def compile_block(cs: CompilerState, f: ProgFunc, b: ProgBlock):
-        """ Парсинг блока """
+        """ Parsing a block """
         idx = b.w_first.idx
         cs.expect(idx, '{')
         cs.vars_push()
@@ -401,9 +401,9 @@ class Compiler:
         while cs.get_word(idx) != '}':
             w = cs.get_w(idx)
 
-            if w.word == '.':  # проверка глубины стека: д.б. 0
+            if w.word == '.':  # stack depth check: must be 0
                 if cs.stack_len != 0:
-                    raise cs.err(idx, f'глубина стека не 0: {cs.stack_len}')
+                    raise cs.err(idx, f'stack depth is not 0: {cs.stack_len}')
                 if b.first_point is None:
                     b.first_point = w
                 idx += 1
@@ -417,25 +417,25 @@ class Compiler:
                 x = ProgLoop(w, cs.runners)
                 b.code.append(x)
                 idx = Compiler.compile_loop(cs, f, x)
-            elif w.word == '>>_':  # уменьшение глубины стека до нуля
+            elif w.word == '>>_':  # decrease stack depth to zero
                 x = ProgReduce(w, cs.stack_len, cs.runners)
                 b.code.append(x)
                 cs.stack_len = 0
                 idx += 1
-            elif w.word[:3] == '>_:':  # уменьшение глубины стека на заданную величину
+            elif w.word[:3] == '>_:':  # decrease stack depth by a given amount
                 x = ProgReduce(w, 0, cs.runners)
                 b.code.append(x)
                 idx = Compiler.compile_reduce(cs, x)
-            elif '>' in w.word and w.word.count(':') == 1:  # присвоение
+            elif '>' in w.word and w.word.count(':') == 1:  # assignment
                 x = ProgAssign(w, cs.runners)
                 b.code.append(x)
                 idx = Compiler.compile_assign(cs, x)
-            elif '>' in w.word and w.word.count(':') == 2:  # вызов функции
+            elif '>' in w.word and w.word.count(':') == 2:  # function call
                 x = ProgCall(w, cs.runners)
                 b.code.append(x)
                 idx = Compiler.compile_call(cs, f, x)
             else:
-                raise cs.err(idx, 'неизвестный или неожиданный оператор')
+                raise cs.err(idx, 'unknown or unexpected operator')
         idx += 1
 
         b.stack_len_out = cs.stack_len

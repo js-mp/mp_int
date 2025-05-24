@@ -5,7 +5,7 @@ from typing import List
 # =====================================================================================================================
 class CompilerError(Exception):
     def __init__(self, err):
-        self.err = err if err != '' else 'ошибка'
+        self.err = err if err != '' else 'error'
 
     def __str__(self):
         return self.err
@@ -23,13 +23,13 @@ class Line:
         return f'{self.fname} {self.line_no}: {self.line}'
 
     def get_words(self):
-        """ Список слов строки """
+        """ List of words of the line """
         ret: List[Word] = []
         p = 0
         for s in self.ss:
             p = self.line.find(s, p)
             if p < 0:
-                raise CompilerError(f'{self.fname} {self.line_no}: слово "{s}" не найдено в строке: {self.line}')
+                raise CompilerError(f'{self.fname} {self.line_no}: word "{s}" not found in line: {self.line}')
             ret.append(Word(self.fname, self.line_no, p + 1, s))
             p += 1
         return ret
@@ -42,7 +42,7 @@ class Word:
         self.line_no = line_no
         self.pos_no = pos_no
         self.word = word
-        self.idx = -1  # будет заполняться в ленивом режиме в get_w
+        self.idx = -1  # will be filled lazily in get_w
 
     def __str__(self):
         return f'"{self.word}" ({self.fname} {self.line_no}:{self.pos_no})'
@@ -71,14 +71,14 @@ class CompilerState:
         self.runners = runners if runners is not None else {}
 
     def get_words(self, from_idx: int):
-        """ Генератор для получений пар (индекс, слово), начиная с указанного индекса """
+        """ Generator for getting pairs (index, word) starting from the specified index """
         for i, w in enumerate(self.ww[from_idx:]):
             yield i + from_idx, w
 
     def print_warnings(self):
         if not self._warns:
             return
-        print(f'\n{len(self._warns)} предупреждений:\n')
+        print(f'\n{len(self._warns)} warnings:\n')
         for s in self._warns:
             print(f'{s}\n')
 
@@ -93,14 +93,14 @@ class CompilerState:
     def expect(self, idx, s):
         s1 = self.get_word(idx)
         if s1 != s:
-            raise self.err(idx, f'ожидается "{s}" получено "{s1}"')
+            raise self.err(idx, f'expected "{s}", received "{s1}"')
 
     def get_w(self, idx):
         if idx < self.nn:
             w = self.ww[idx]
             w.idx = idx
             return w
-        raise self.err(self.nn - 1, 'неожиданный конец файла')
+        raise self.err(self.nn - 1, 'unexpected end of file')
 
     def get_word(self, idx):
         return self.get_w(idx).word
@@ -113,4 +113,4 @@ class CompilerState:
 
     def check_stack_len(self, idx, min_len=0):
         if self.stack_len < min_len:
-            raise self.err(idx, f'глубина стека меньше 0: {self.stack_len - min_len}')
+            raise self.err(idx, f'stack depth less than 0: {self.stack_len - min_len}')
