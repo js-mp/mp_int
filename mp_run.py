@@ -39,9 +39,9 @@ def _go():
     mp_file_name = sys.argv[1]
     func_name = sys.argv[2]
     param = [_str_to_int(v) for v in sys.argv[3:]]
-    print('')
-    for p in sys.argv[1:]:
-        print(p)
+    # print('')
+    # for p in sys.argv[1:]:
+    #     print(p)
     print('')
     Compiler(mp_file_name, ip_runners()).compile().run(func_name, { 'param': param })
 
