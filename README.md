@@ -1,3 +1,86 @@
+# MP Programming Language
+
+MP is a domain-specific programming language designed for bit manipulation algorithms and generating corresponding logical expressions (implemented in a separate library).
+
+## Key Features
+- Focused on bit-level operations
+- Supports structured programming with includes and functions
+- Includes a set of native bitwise operations
+
+## Language Restrictions
+- Recursion is prohibited
+- No conditional loops - all loops execute a fixed number of iterations
+
+## Syntax Overview
+
+### Includes
+```mp
+#include <filename>
+```
+(Note: Cannot be used inside function bodies)
+
+### Native Functions
+Native functions are predefined bitwise operations:
+```mp
+func and:2:1    #1d+1d:1d native   // Bitwise AND
+func or:2:1     #1d+1d:1d native   // Bitwise OR
+func xor:2:1    #1d+1d:1d native   // Bitwise XOR
+func im:2:1     #1d+1d:1d native   // Implication ((not a) or b)
+```
+
+### Function Definition
+```mp
+func sum:16:8 `8d+8d:8d {
+  // Function body
+}
+```
+- `sum:16:8` - Function name with input (16 bits) and output (8 bits) sizes
+- `8d+8d:8d` - Optional format specification:
+  - `d` - decimal
+  - `h` - hexadecimal
+  - `b` - binary
+
+### Language Constructs
+1. **Variable Declaration**:
+```mp
+def{ arg1:8 arg2:8 x:1 ret:8 }
+```
+
+2. **Stack Operations**:
+   - Move to variable: `>arg1:8`
+   - Push to stack: `x:1>`
+   - Copy stack: `>arg1:8>`
+   - Push constant: `0:1>` or `1B`h>` or `11011`b>`
+   - Pop bits: `>_:8`
+
+3. **Control Flow**:
+   - Function call: `>sum:16:8>`
+   - Stack check: `.`
+   - Loop: `loop 8 ` ... `
+   - Conditional: `if { ... } else { ... }`
+
+4. **Comments**: `// Single-line comment`
+
+## Examples
+
+Run program:
+```bash
+./mp_run.py mp_prog/example_sum.mp sum:16:8 15 7
+```
+
+SHA-256 example:
+```bash
+./mp_run.py mp_prog/example_sha256.mp sha256:32:256 97 98 99 100
+```
+
+## Format Specifiers
+- `d` - Decimal
+- `h` - Hexadecimal
+- `b` - Binary
+
+Note: Only non-negative integers supported.
+
+
 # Язык программирования MP
 
 Язык программирования MP предназначен для описания алгоритмов манипуляции битами, с целью построения соответствующих
