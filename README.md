@@ -30,12 +30,12 @@ func im:2:1     #1d+1d:1d native   // Implication ((not a) or b)
 
 ### Function Definition
 ```mp
-func sum:16:8 `8d+8d:8d {
+func sum:16:8 #8d+8d:8d {
   // Function body
 }
 ```
 - `sum:16:8` - Function name with input (16 bits) and output (8 bits) sizes
-- `8d+8d:8d` - Optional format specification:
+- `#8d+8d:8d` - Optional format specification:
   - `d` - decimal
   - `h` - hexadecimal
   - `b` - binary
@@ -50,14 +50,14 @@ def{ arg1:8 arg2:8 x:1 ret:8 }
    - Move to variable: `>arg1:8`
    - Push to stack: `x:1>`
    - Copy stack: `>arg1:8>`
-   - Push constant: `0:1>` or `1B`h>` or `11011`b>`
+   - Push constant: `27:8>` or `1B#h:8>` or `11011#b:8>`
    - Pop bits: `>_:8`
 
 3. **Control Flow**:
    - Function call: `>sum:16:8>`
-   - Stack check: `.`
-   - Loop: `loop 8 ` ... `
-   - Conditional: `if { ... } else { ... }`
+   - Stack check: `.` (zero-depth stack control, within this function; affects compilation but not execution; can be used for self-testing)
+   - Loop: `loop 8 { ... }` (the loop body is executed a specified number of times, in this case 8)
+   - Conditional: `if { ... } else { ... }` (one bit is popped from the stack, and if it is 1, the first block is executed, if 0, the second; the `else` block is optional; if specified, the stack depth change in both blocks must be the same)
 
 4. **Comments**: `// Single-line comment`
 
